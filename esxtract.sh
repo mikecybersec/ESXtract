@@ -58,7 +58,16 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     exit 0
 fi
 
-OUTDIR="/tmp/esxi_triage_$(hostname)_$(date +%Y%m%d_%H%M%S)"
+if [ -d "/vmfs/volumes/datastore1" ]; then
+    BASEDIR="/vmfs/volumes/datastore1"
+elif [ -d "/tmp" ]; then
+    BASEDIR="/tmp"
+else
+    echo "[!] Neither /vmfs/volumes/datastore1 nor /tmp is available as a base directory." >&2
+    exit 1
+fi
+
+OUTDIR="${BASEDIR}/esxi_triage_$(hostname)_$(date +%Y%m%d_%H%M%S)"
 mkdir -p "$OUTDIR"
 
 # System and Host Information
@@ -118,7 +127,7 @@ md5sum * > hashes.md5
 cd /
 
 # Archive and Clean Up
-tar czf "${OUTDIR}.tar.gz" -C /tmp "$(basename "$OUTDIR")"
+tar czf "${OUTDIR}.tar.gz" -C "$BASEDIR" "$(basename "$OUTDIR")"
 rm -rf "$OUTDIR"
 
 echo "[+] Triage collection complete: ${OUTDIR}.tar.gz"
