@@ -9,3 +9,5 @@ The guide related to this utility is here; https://mikecybersec.notion.site/ESXi
 - Add option to push to S3 bucket
 - Add a 'chainsaw' function to identify Indicators of Attack (IoA)
 - Add feature to check for presence of known vulnerabilities/misconfigurations that help common ESXi incidents to manifest or worsen.
+- Add option for password
+- Add option for verbose or quiet mode
