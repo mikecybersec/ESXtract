@@ -17,7 +17,7 @@
 #   3. Navigate to the script location (e.g., /vmfs/volumes/datastore1/).
 #   4. Make it executable: chmod +x ./esxi_triage.sh
 #   5. Run it: ./esxi_triage.sh
-#   6. Retrieve the resulting .tar.gz archive from the same directory for analysis.
+#   6. Retrieve the resulting .tar.gz archive from /vmfs/volumes/datastore1 when present, or from /tmp otherwise, for analysis.
 #
 # For help: ./esxi_triage.sh --help
 ###############################################################################
@@ -36,7 +36,8 @@ Instructions:
        chmod +x ./esxi_triage.sh
   5. Run the script:
        ./esxi_triage.sh
-  6. The output archive (esxi_triage_<hostname>_<date>.tar.gz) will be created in /tmp.
+  6. The output archive (esxi_triage_<hostname>_<date>.tar.gz) will be created in
+     /vmfs/volumes/datastore1 when that datastore exists, or in /tmp if it does not.
      Download it from the host for further analysis.
 
 Options:
