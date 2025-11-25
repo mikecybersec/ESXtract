@@ -1,5 +1,6 @@
 # ESXtract
-ESXtract is a project focused on improving the forensics collection process from ESXi hosts.
+ESXtract is a project focused on improving the forensics collection process from ESXi hosts.</br>
+The guide related to this utility is here; https://mikecybersec.notion.site/ESXi-IR-Guide-0ffbcec7272244d6b10dba4f4d16a7c8?pvs=74
 
 ## Planned Changes
 - Offer a compiled version
