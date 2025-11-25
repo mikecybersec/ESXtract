@@ -64,6 +64,7 @@ EOF
 # Determine mode
 MODE=""
 SCAN_PATH=""
+SCAN_FINDINGS_FILE=""
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -89,6 +90,22 @@ while [ "$#" -gt 0 ]; do
 done
 
 # Helpers for scanning mode
+log_line() {
+    msg="$1"
+    printf "%b\n" "$msg"
+    if [ -n "$SCAN_FINDINGS_FILE" ]; then
+        printf "%b\n" "$msg" >> "$SCAN_FINDINGS_FILE"
+    fi
+}
+
+log_error() {
+    msg="$1"
+    printf "%b\n" "$msg" >&2
+    if [ -n "$SCAN_FINDINGS_FILE" ]; then
+        printf "%b\n" "$msg" >> "$SCAN_FINDINGS_FILE"
+    fi
+}
+
 is_public_ipv4() {
     ip="$1"
     case "$ip" in
@@ -102,13 +119,13 @@ is_public_ipv4() {
 }
 
 report_section() {
-    echo "\n[+] $1"
+    log_line "\n[+] $1"
 }
 
 scan_network_connections() {
     file="$1/network_connections.txt"
     if [ ! -f "$file" ]; then
-        echo "[-] network_connections.txt not found in scan path"
+        log_line "[-] network_connections.txt not found in scan path"
         return
     fi
 
@@ -116,49 +133,49 @@ scan_network_connections() {
     flagged=0
     for ip in $(grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}' "$file" | sort -u); do
         if is_public_ipv4 "$ip"; then
-            echo "  Suspicious IP: $ip"
+            log_line "  Suspicious IP: $ip"
             flagged=1
         fi
     done
-    [ "$flagged" -eq 0 ] && echo "  None detected"
+    [ "$flagged" -eq 0 ] && log_line "  None detected"
 }
 
 scan_processes() {
     file="$1/process_list.txt"
     if [ ! -f "$file" ]; then
-        echo "[-] process_list.txt not found in scan path"
+        log_line "[-] process_list.txt not found in scan path"
         return
     fi
 
     report_section "Potentially suspicious processes"
     matches=$(grep -Ei '/tmp/|/var/tmp/|/dev/shm/|python|perl|curl|wget|nc |netcat|socat|bash -i|openssl enc' "$file")
     if [ -n "$matches" ]; then
-        echo "$matches"
+        log_line "$matches"
     else
-        echo "  None detected"
+        log_line "  None detected"
     fi
 }
 
 scan_cron() {
     file="$1/root_crontab.txt"
     if [ ! -f "$file" ]; then
-        echo "[-] root_crontab.txt not found in scan path"
+        log_line "[-] root_crontab.txt not found in scan path"
         return
     fi
 
     report_section "Non-comment cron entries"
     matches=$(grep -E '^[^#].*\S' "$file")
     if [ -n "$matches" ]; then
-        echo "$matches"
+        log_line "$matches"
     else
-        echo "  None detected"
+        log_line "  None detected"
     fi
 }
 
 scan_users() {
     file="$1/user_accounts.txt"
     if [ ! -f "$file" ]; then
-        echo "[-] user_accounts.txt not found in scan path"
+        log_line "[-] user_accounts.txt not found in scan path"
         return
     fi
 
@@ -168,29 +185,32 @@ scan_users() {
     for user in $(awk 'NR>1 {print $1}' "$file" | sort -u); do
         echo "$baseline" | grep -qw "$user" && continue
         found=1
-        echo "  Unexpected user: $user"
+        log_line "  Unexpected user: $user"
     done
-    [ "$found" -eq 0 ] && echo "  None detected"
+    [ "$found" -eq 0 ] && log_line "  None detected"
 }
 
 run_scan() {
     target_dir="$1"
     if [ -z "$target_dir" ]; then
-        echo "[!] Scan mode requires a directory path" >&2
+        log_error "[!] Scan mode requires a directory path"
         exit 1
     fi
 
     if [ ! -d "$target_dir" ]; then
-        echo "[!] Scan path does not exist or is not a directory: $target_dir" >&2
+        log_error "[!] Scan path does not exist or is not a directory: $target_dir"
         exit 1
     fi
 
-    echo "[+] Starting scan of $target_dir"
+    SCAN_FINDINGS_FILE="$target_dir/scan_findings.txt"
+    : > "$SCAN_FINDINGS_FILE"
+
+    log_line "[+] Starting scan of $target_dir"
     scan_network_connections "$target_dir"
     scan_processes "$target_dir"
     scan_cron "$target_dir"
     scan_users "$target_dir"
-    echo "\n[+] Scan complete"
+    log_line "\n[+] Scan complete"
 }
 
 if [ "$MODE" = "scan" ]; then
