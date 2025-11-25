@@ -3,13 +3,10 @@ grep -R -H -E "esxcli system account" . \
   | grep -Ev "shell" \
   | awk '{ print $0 "   <-- ESXi Account Modified" }'
 
-
-
 grep -R -H -E "esxcli system auditrecords" . \
   | grep -E "remote|local" \
   | grep -Ev "shell" \
   | awk '{ print $0 "   <-- ESXi Audit Tampering" }'
-
 
 grep -R -H -E "pkill -9 vmx-" . \
   | awk '{ print $0 "   <-- ESXi Bulk VM Termination" }'
@@ -23,7 +20,6 @@ grep -R -H -E "esxcli" . \
 
 grep -R -H -E "Download failed|Failed to download file|File download error|Could not download" . \
   | awk '{ print $0 "   <-- ESXi Download Errors" }'
-
 
 grep -R -H -E "system settings encryption set" . \
   | grep -Ev "shell" \
@@ -67,7 +63,6 @@ grep -R -H -E "ESXi Shell" . \
   | grep -E "has been enabled" \
   | awk '{ print $0 "   <-- ESXi Shell Access Enabled" }'
 
-
 grep -R -H -E "syslog config set" . \
   | grep -E "esxcli" \
   | awk '{ print $0 "   <-- ESXi Syslog Config Change" }'
@@ -87,7 +82,6 @@ grep -R -H -E "esxcli system permission set" . \
   | grep -E "role Admin" \
   | awk '{ print $0 "   <-- ESXi User Granted Admin Role" }'
 
-
 grep -R -H -E "esxcli software acceptance set" . \
   | grep -E "shell" \
   | awk '{ print $0 "   <-- ESXi VIB Acceptance Level Tampering" }'
@@ -99,8 +93,6 @@ grep -R -H -E "esxcli vm process" . \
 grep -R -H -E "File download from path" . \
   | grep -E "was initiated from" \
   | awk '{ print $0 "   <-- ESXi VM Exported via Remote Tool" }'
-
-
 
 
 
