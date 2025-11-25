@@ -15,33 +15,41 @@
 #   1. Upload this script to a VMware ESXi datastore (e.g., via vSphere Client or Datastore Browser).
 #   2. SSH into the ESXi host or access the ESXi Shell.
 #   3. Navigate to the script location (e.g., /vmfs/volumes/datastore1/).
-#   4. Make it executable: chmod +x ./esxi_triage.sh
-#   5. Run it: ./esxi_triage.sh
+#   4. Make it executable: chmod +x ./esxtract.sh
+#   5. Run collection on the host: ./esxtract.sh -c
 #   6. Retrieve the resulting .tar.gz archive from /vmfs/volumes/datastore1 when present, or from /tmp otherwise, for analysis.
+#   7. To scan an extracted archive locally: ./esxtract.sh -s /path/to/folder
 #
-# For help: ./esxi_triage.sh --help
+# For help: ./esxtract.sh --help
 ###############################################################################
 
 show_help() {
 cat << EOF
 ESXi Incident Response Triage Script
 
-This script collects forensic artifacts from a VMware ESXi host for incident response.
+This script collects forensic artifacts from a VMware ESXi host for incident response
+or scans a previously collected folder for quick indicators of attack.
 
 Instructions:
   1. Upload this script to a VMware datastore (e.g., using vSphere Client).
   2. SSH into the ESXi host or use the ESXi Shell.
   3. Navigate to the script location (e.g., /vmfs/volumes/datastore1/).
   4. Make it executable:
-       chmod +x ./esxi_triage.sh
-  5. Run the script:
-       ./esxi_triage.sh
-  6. The output archive (esxi_triage_<hostname>_<date>.tar.gz) will be created in
+       chmod +x ./esxtract.sh
+  5. Run collection on an ESXi host:
+       ./esxtract.sh -c
+  6. To scan a previously collected (unzipped) folder for quick IoA checks:
+       ./esxtract.sh -s /path/to/esxi_triage_host_timestamp
+  7. The output archive (esxi_triage_<hostname>_<date>.tar.gz) will be created in
      /vmfs/volumes/datastore1 when that datastore exists, or in /tmp if it does not.
      Download it from the host for further analysis.
 
 Options:
   -h, --help      Show this help message and exit
+  -c, --collection
+                  Run the artifact collection workflow on an ESXi host
+  -s, --scan <dir>
+                  Scan an extracted collection folder for suspicious indicators
 
 References:
   - DCScoder/ESXiTri
@@ -53,10 +61,147 @@ References:
 EOF
 }
 
-# Parse arguments for help
-if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-    show_help
+# Determine mode
+MODE=""
+SCAN_PATH=""
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        -c|--collection)
+            MODE="collect"
+            ;;
+        -s|--scan)
+            MODE="scan"
+            shift
+            SCAN_PATH="$1"
+            ;;
+        *)
+            echo "[!] Unknown option: $1" >&2
+            show_help
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+# Helpers for scanning mode
+is_public_ipv4() {
+    ip="$1"
+    case "$ip" in
+        10.*|192.168.*|172.1[6-9].*|172.2[0-9].*|172.3[0-1].*|127.*|169.254.*|0.*|255.255.255.255|224.*|240.*)
+            return 1
+            ;;
+        *)
+            return 0
+            ;;
+    esac
+}
+
+report_section() {
+    echo "\n[+] $1"
+}
+
+scan_network_connections() {
+    file="$1/network_connections.txt"
+    if [ ! -f "$file" ]; then
+        echo "[-] network_connections.txt not found in scan path"
+        return
+    fi
+
+    report_section "Potential external IPv4 connections"
+    flagged=0
+    for ip in $(grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}' "$file" | sort -u); do
+        if is_public_ipv4 "$ip"; then
+            echo "  Suspicious IP: $ip"
+            flagged=1
+        fi
+    done
+    [ "$flagged" -eq 0 ] && echo "  None detected"
+}
+
+scan_processes() {
+    file="$1/process_list.txt"
+    if [ ! -f "$file" ]; then
+        echo "[-] process_list.txt not found in scan path"
+        return
+    fi
+
+    report_section "Potentially suspicious processes"
+    matches=$(grep -Ei '/tmp/|/var/tmp/|/dev/shm/|python|perl|curl|wget|nc |netcat|socat|bash -i|openssl enc' "$file")
+    if [ -n "$matches" ]; then
+        echo "$matches"
+    else
+        echo "  None detected"
+    fi
+}
+
+scan_cron() {
+    file="$1/root_crontab.txt"
+    if [ ! -f "$file" ]; then
+        echo "[-] root_crontab.txt not found in scan path"
+        return
+    fi
+
+    report_section "Non-comment cron entries"
+    matches=$(grep -E '^[^#].*\S' "$file")
+    if [ -n "$matches" ]; then
+        echo "$matches"
+    else
+        echo "  None detected"
+    fi
+}
+
+scan_users() {
+    file="$1/user_accounts.txt"
+    if [ ! -f "$file" ]; then
+        echo "[-] user_accounts.txt not found in scan path"
+        return
+    fi
+
+    report_section "Non-default users"
+    baseline="root dcui daemon nobody vpxuser"
+    found=0
+    for user in $(awk 'NR>1 {print $1}' "$file" | sort -u); do
+        echo "$baseline" | grep -qw "$user" && continue
+        found=1
+        echo "  Unexpected user: $user"
+    done
+    [ "$found" -eq 0 ] && echo "  None detected"
+}
+
+run_scan() {
+    target_dir="$1"
+    if [ -z "$target_dir" ]; then
+        echo "[!] Scan mode requires a directory path" >&2
+        exit 1
+    fi
+
+    if [ ! -d "$target_dir" ]; then
+        echo "[!] Scan path does not exist or is not a directory: $target_dir" >&2
+        exit 1
+    fi
+
+    echo "[+] Starting scan of $target_dir"
+    scan_network_connections "$target_dir"
+    scan_processes "$target_dir"
+    scan_cron "$target_dir"
+    scan_users "$target_dir"
+    echo "\n[+] Scan complete"
+}
+
+if [ "$MODE" = "scan" ]; then
+    run_scan "$SCAN_PATH"
     exit 0
+fi
+
+if [ "$MODE" != "collect" ]; then
+    echo "[!] No mode selected. Use -c for collection or -s <path> for scanning." >&2
+    show_help
+    exit 1
 fi
 
 if [ -d "/vmfs/volumes/datastore1" ]; then
