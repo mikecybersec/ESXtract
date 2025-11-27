@@ -63,3 +63,4 @@ grep -R -H -E "unexpected user" . | awk '{ print $0 "   <-- Suspicious account c
 - Add option to push to S3 bucket
 - Add feature to check for presence of known vulnerabilities/misconfigurations that help common ESXi incidents to manifest or worsen.
 - Add option for verbose or quiet mode
+- Add detection for potentially falsified VIBs
