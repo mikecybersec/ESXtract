@@ -5,7 +5,21 @@ The guide related to this utility is here; https://mikecybersec.notion.site/ESXi
 ## Usage
 Note there are 2 modes!
 
+**Options**
+
+- `-h`, `--help`: Show the help message and exit.
+- `-c`, `--collection`: Run the artifact collection workflow on an ESXi host.
+- `-s <dir>`, `--scan <dir>`: Scan an extracted collection folder for suspicious indicators.
+- `-d <file>`, `--detections <file>`: Use a custom detections file during scanning (defaults to the bundled `detections.sh`).
+- `-p <password>`, `--password <password>`: Password-protect the resulting zip archive during collection.
+
 ### Collector Mode - To be ran on ESXi via shell
+
+Example:
+
+```bash
+./esxtract.sh -c [-p <password>]
+```
 
 1. Upload `esxtract.sh` to a VMware ESXi datastore (for example, using vSphere Client or Datastore Browser).
 2. SSH into the ESXi host or open the ESXi Shell and navigate to the script location (for example, `/vmfs/volumes/datastore1/`).
@@ -19,6 +33,12 @@ Note there are 2 modes!
 6. For help or usage details at any time: `./esxtract.sh --help`
 
 ### Scan Mode - To be ran against your collection via your forensics machine
+Example:
+
+```bash
+./esxtract.sh -s /path/to/esxi_triage_<hostname>_<date> [-d /path/to/detections.sh]
+```
+
 The scan mode reviews key text outputs (such as `network_connections.txt`, `process_list.txt`, `root_crontab.txt`, and `user_accounts.txt`) to highlight:
 
 - Potential external IPv4 connections
