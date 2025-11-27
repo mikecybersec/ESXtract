@@ -1,5 +1,3 @@
-#!/bin/bash
-
 grep -R -H --exclude=detections.sh -E "esxcli system account" . \
   | grep -E "\-i |--id" \
   | grep -Ev "shell" \
@@ -46,8 +44,8 @@ grep -R -H --exclude=detections.sh -E "pkill -9 vmx-" . \
     }
 '
 
-grep -R -H --exclude=detections.sh -E "esxcli" . \
-  | grep -E "--format-param" \
+grep -R -H -a --exclude=detections.sh -E "esxcli" . \
+  | grep -E -- "--format-param" \
   | grep -E "vm process list" \
   | grep -E "awk" \
   | grep -E "esxcli vm process kill" \
@@ -94,7 +92,7 @@ grep -R -H --exclude=detections.sh -E "system settings encryption set" . \
     }
 '
 
-grep -R -H --exclude=detections.sh -E "root" . \
+grep -R -H --binary-files=without-match --exclude=detections.sh -E "root" . \
   | grep -E "logged in" \
   | grep -E "root@[0-9]{1,3}(\.[0-9]{1,3}){3}" \
   | grep -Ev "root@127\.|root@10\.|root@192\.168\.|root@172\.(1[6-9]|2[0-9]|3[0-1])\." \
@@ -109,7 +107,7 @@ grep -R -H --exclude=detections.sh -E "root" . \
             printf("[+] %d findings in %s - ESXi External Root Login Activity\n", count[f], f)
         }
     }
-'
+
 
 grep -R -H --exclude=detections.sh -E "network firewall set" . \
   | grep -E "enabled f" \
