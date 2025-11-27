@@ -50,6 +50,8 @@ Options:
                   Run the artifact collection workflow on an ESXi host
   -s, --scan <dir>
                   Scan an extracted collection folder for suspicious indicators
+  -d, --detections <file>
+                  Optional: detections file to use during scanning (defaults to bundled detections.sh)
 
 References:
   - DCScoder/ESXiTri
@@ -61,10 +63,14 @@ References:
 EOF
 }
 
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+DEFAULT_DETECTIONS_FILE="$SCRIPT_DIR/detections.sh"
+
 # Determine mode
 MODE=""
 SCAN_PATH=""
 SCAN_FINDINGS_FILE=""
+DETECTIONS_FILE=""
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -79,6 +85,10 @@ while [ "$#" -gt 0 ]; do
             MODE="scan"
             shift
             SCAN_PATH="$1"
+            ;;
+        -d|--detections)
+            shift
+            DETECTIONS_FILE="$1"
             ;;
         *)
             echo "[!] Unknown option: $1" >&2
@@ -205,28 +215,24 @@ run_detections() {
     report_section "Detections"
     hits=0
 
-    run_detection_pipeline "grep -R -H -E \"esxcli system account\" \"$target_dir\"/* 2>/dev/null | grep -E \"\\-i |--id\" | grep -Ev \"shell\" | awk '{ print \$0 \"   <-- ESXi Account Modified\" }'" && hits=1
-    run_detection_pipeline "grep -R -H -E \"esxcli system auditrecords\" \"$target_dir\"/* 2>/dev/null | grep -E \"remote|local\" | grep -Ev \"shell\" | awk '{ print \$0 \"   <-- ESXi Audit Tampering\" }'" && hits=1
-    run_detection_pipeline "grep -R -H -E \"pkill -9 vmx-\" \"$target_dir\"/* 2>/dev/null | awk '{ print \$0 \"   <-- ESXi Bulk VM Termination\" }'" && hits=1
-    run_detection_pipeline "grep -R -H -E \"esxcli\" \"$target_dir\"/* 2>/dev/null | grep -E \"--format-param\" | grep -E \"vm process list\" | grep -E \"awk\" | grep -E \"esxcli vm process kill\" | awk '{ print \$0 \"   <-- ESXi Bulk VM Termination\" }'" && hits=1
-    run_detection_pipeline "grep -R -H -E \"Download failed|Failed to download file|File download error|Could not download\" \"$target_dir\"/* 2>/dev/null | awk '{ print \$0 \"   <-- ESXi Download Errors\" }'" && hits=1
-    run_detection_pipeline "grep -R -H -E \"system settings encryption set\" \"$target_dir\"/* 2>/dev/null | grep -Ev \"shell\" | grep -E \" -s | -e |--require-secure-boot|require-exec-installed-only|execInstalledOnly\" | awk '{ print \$0 \"   <-- ESXi Encryption Settings Modified\" }'" && hits=1
-    run_detection_pipeline "grep -R -H -E \"root\" \"$target_dir\"/* 2>/dev/null | grep -E \"logged in\" | grep -E \"root@[0-9]{1,3}(\\.[0-9]{1,3}){3}\" | grep -Ev \"root@127\\.|root@10\\.|root@192\\.168\\.|root@172\\.(1[6-9]|2[0-9]|3[0-1])\\.\" | awk '{ print \$0 \"   <-- ESXi External Root Login Activity\" }'" && hits=1
-    run_detection_pipeline "grep -R -H -E \"network firewall set\" \"$target_dir\"/* 2>/dev/null | grep -E \"enabled f\" | awk '{ print \$0 \"   <-- ESXi Firewall Disabled\" }'" && hits=1
-    run_detection_pipeline "grep -R -H -E \"lockdownmode\\.disabled|Administrator access to the host has been enabled\" \"$target_dir\"/* 2>/dev/null | awk '{ print \$0 \"   <-- ESXi Lockdown Mode Disabled\" }'" && hits=1
-    run_detection_pipeline "grep -R -H -E \"Set called with key\" \"$target_dir\"/* 2>/dev/null | grep -E \"Syslog\\.global\\.logHost|Syslog\\.global\\.logdir\" | awk '{ print \$0 \"   <-- ESXi Loghost Config Tampering\" }'" && hits=1
-    run_detection_pipeline "grep -R -H -E \"image profile with validation disabled\\.|image profile bypassing signing and acceptance level verification\\.|vib without valid signature,\" \"$target_dir\"/* 2>/dev/null | awk '{ print \$0 \"   <-- ESXi Malicious VIB Forced Install\" }'" && hits=1
-    run_detection_pipeline "grep -R -H -E \"bash -i >&|/dev/tcp/|/dev/udp/|socat exec:|socket\\(S,PF_INET\" \"$target_dir\"/* 2>/dev/null | awk '{ print \$0 \"   <-- ESXi Reverse Shell Patterns\" }'" && hits=1
-    run_detection_pipeline "grep -R -H -E \"shell\\[\" \"$target_dir\"/* 2>/dev/null | grep -E \"/etc/shadow|/etc/vmware/hostd/hostd\\.xml|/etc/vmware/vpxa/vpxa\\.cfg|/etc/sfcb/sfcb\\.cfg|/etc/security/|/etc/likewise/krb5-affinity\\.conf|/etc/vmware-vpx/vcdb\\.properties\" | awk '{ print \$0 \"   <-- ESXi Sensitive Files Accessed\" }'" && hits=1
-    run_detection_pipeline "grep -R -H -E \"root\" \"$target_dir\"/* 2>/dev/null | grep -E \"logged in\" | grep -E \"root@[0-9]{1,3}(\\.[0-9]{1,3}){3}\" | grep -Ev \"root@127\\.0\\.0\\.1\" | awk '{ print \$0 \"   <-- ESXi Shared or Stolen Root Account\" }'" && hits=1
-    run_detection_pipeline "grep -R -H -E \"ESXi Shell\" \"$target_dir\"/* 2>/dev/null | grep -E \"has been enabled\" | awk '{ print \$0 \"   <-- ESXi Shell Access Enabled\" }'" && hits=1
-    run_detection_pipeline "grep -R -H -E \"syslog config set\" \"$target_dir\"/* 2>/dev/null | grep -E \"esxcli\" | awk '{ print \$0 \"   <-- ESXi Syslog Config Change\" }'" && hits=1
-    run_detection_pipeline "grep -R -H -E \"NTPClock\" \"$target_dir\"/* 2>/dev/null | grep -E \"system clock stepped\" | awk '{ print \$0 \"   <-- ESXi System Clock Manipulation\" }'" && hits=1
-    run_detection_pipeline "grep -R -H -E \"system\" \"$target_dir\"/* 2>/dev/null | grep -E \"esxcli\" | grep -E \"get|list\" | grep -E \"user=\" | grep -Ev \"filesystem\" | awk '{ print \$0 \"   <-- ESXi System Information Discovery\" }'" && hits=1
-    run_detection_pipeline "grep -R -H -E \"esxcli system permission set\" \"$target_dir\"/* 2>/dev/null | grep -E \"role Admin\" | awk '{ print \$0 \"   <-- ESXi User Granted Admin Role\" }'" && hits=1
-    run_detection_pipeline "grep -R -H -E \"esxcli software acceptance set\" \"$target_dir\"/* 2>/dev/null | grep -E \"shell\" | awk '{ print \$0 \"   <-- ESXi VIB Acceptance Level Tampering\" }'" && hits=1
-    run_detection_pipeline "grep -R -H -E \"esxcli vm process\" \"$target_dir\"/* 2>/dev/null | grep -E \"list\" | awk '{ print \$0 \"   <-- ESXi VM Discovery\" }'" && hits=1
-    run_detection_pipeline "grep -R -H -E \"File download from path\" \"$target_dir\"/* 2>/dev/null | grep -E \"was initiated from\" | awk '{ print \$0 \"   <-- ESXi VM Exported via Remote Tool\" }'" && hits=1
+    detections_path="$DETECTIONS_FILE"
+    [ -z "$detections_path" ] && detections_path="$DEFAULT_DETECTIONS_FILE"
+
+    if [ -z "$detections_path" ]; then
+        log_error "[!] No detections file provided or found."
+    elif [ -f "$detections_path" ]; then
+        log_line "  Using detections file: $detections_path"
+        while IFS= read -r pipeline || [ -n "$pipeline" ]; do
+            case "$pipeline" in
+                ''|'#'*)
+                    continue
+                    ;;
+            esac
+            run_detection_pipeline "cd \"$target_dir\" && $pipeline" && hits=1
+        done < "$detections_path"
+    else
+        log_error "[!] Detections file not found: $detections_path"
+    fi
 
     [ "$hits" -eq 0 ] && log_line "  No detection hits"
 }

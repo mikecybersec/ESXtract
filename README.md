@@ -13,6 +13,8 @@ Note there are 2 modes!
 4. Collect forensic artifacts on the ESXi host: `./esxtract.sh -c`
    - The resulting archive (`esxi_triage_<hostname>_<date>.tar.gz`) is written to `/vmfs/volumes/datastore1` when available, or `/tmp` otherwise. Download it from the host for further analysis.
 5. Scan a previously collected (unzipped) folder for quick indicators of attack: `./esxtract.sh -s /path/to/esxi_triage_<hostname>_<date>`
+   - Use custom detection pipelines during scanning with `./esxtract.sh -s /path/to/esxi_triage_<hostname>_<date> -d /path/to/detections.sh`.
+   - When a detections file is provided, each non-comment line is executed from within the scan directory; if no file is specified, the bundled `detections.sh` runs by default.
 6. For help or usage details at any time: `./esxtract.sh --help`
 
 ### Scan Mode - To be ran against your collection via your forensics machine
@@ -22,6 +24,19 @@ The scan mode reviews key text outputs (such as `network_connections.txt`, `proc
 - Processes tied to common attacker tooling or temporary directories
 - Non-comment cron entries
 - Accounts outside a baseline ESXi user list
+
+#### Writing a custom detections file
+- Each non-empty, non-comment line should be a shell pipeline that **only reads** files inside the scan directory; avoid commands that modify files or reach the network.
+- Prefer `grep`, `awk`, `sed`, and similar read-only utilities, and remember that each pipeline is executed with the scan directory as the working directory (use `.` or relative paths).
+- Quote patterns that contain special characters and append a clear marker (for example, `'<-- Description>'`) so hits are easy to spot in the output.
+- Save your rules into a file (for example, `detections.sh`) and run `./esxtract.sh -s /path/to/collection -d /path/to/detections.sh`. If no file is provided, the bundled detections file runs automatically and the log will still report when no detections fire.
+- The repository ships with `detections.sh` so you can use the default rules, fork and adjust them, or point to your own file entirely.
+
+Example custom rule line:
+
+```
+grep -R -H -E "unexpected user" . | awk '{ print $0 "   <-- Suspicious account change" }'
+```
 
 ## Planned Changes
 - Offer a compiled version
