@@ -30,7 +30,7 @@ The scan mode reviews key text outputs (such as `network_connections.txt`, `proc
 - Prefer `grep`, `awk`, `sed`, and similar read-only utilities, and remember that each pipeline is executed with the scan directory as the working directory (use `.` or relative paths).
 - Quote patterns that contain special characters and append a clear marker (for example, `'<-- Description>'`) so hits are easy to spot in the output.
 - Save your rules into a file (for example, `detections.sh`) and run `./esxtract.sh -s /path/to/collection -d /path/to/detections.sh`. If no file is provided, the bundled detections file runs automatically and the log will still report when no detections fire.
-- The repository ships with `detections.sh` so you can use the default rules, fork and adjust them, or point to your own file entirely.
+- The repository ships with `detections.sh`, which includes out-of-the-box detection rules converted from Splunk's ESXi ransomware guidance so they work directly in ESXtract. You can use the default rules, fork and adjust them, or point to your own file entirely. See the original reference for additional context: https://www.splunk.com/en_us/blog/security/detecting-esxi-ransomware-activity-splunk.html
 
 Example custom rule line:
 
