@@ -17,7 +17,7 @@
 #   3. Navigate to the script location (e.g., /vmfs/volumes/datastore1/).
 #   4. Make it executable: chmod +x ./esxtract.sh
 #   5. Run collection on the host: ./esxtract.sh -c
-#   6. Retrieve the resulting .tar.gz archive from /vmfs/volumes/datastore1 when present, or from /tmp otherwise, for analysis.
+#   6. Retrieve the resulting .zip archive from /vmfs/volumes/datastore1 when present, or from /tmp otherwise, for analysis.
 #   7. To scan an extracted archive locally: ./esxtract.sh -s /path/to/folder
 #
 # For help: ./esxtract.sh --help
@@ -38,9 +38,10 @@ Instructions:
        chmod +x ./esxtract.sh
   5. Run collection on an ESXi host:
        ./esxtract.sh -c
+     - Use -p <password> to produce a password-protected zip archive
   6. To scan a previously collected (unzipped) folder for quick IoA checks:
        ./esxtract.sh -s /path/to/esxi_triage_host_timestamp
-  7. The output archive (esxi_triage_<hostname>_<date>.tar.gz) will be created in
+  7. The output archive (esxi_triage_<hostname>_<date>.zip) will be created in
      /vmfs/volumes/datastore1 when that datastore exists, or in /tmp if it does not.
      Download it from the host for further analysis.
 
@@ -52,6 +53,8 @@ Options:
                   Scan an extracted collection folder for suspicious indicators
   -d, --detections <file>
                   Optional: detections file to use during scanning (defaults to bundled detections.sh)
+  -p, --password <password>
+                  Optional: password-protect the resulting zip archive during collection
 
 References:
   - DCScoder/ESXiTri
@@ -71,6 +74,7 @@ MODE=""
 SCAN_PATH=""
 SCAN_FINDINGS_FILE=""
 DETECTIONS_FILE=""
+ZIP_PASSWORD=""
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -89,6 +93,10 @@ while [ "$#" -gt 0 ]; do
         -d|--detections)
             shift
             DETECTIONS_FILE="$1"
+            ;;
+        -p|--password)
+            shift
+            ZIP_PASSWORD="$1"
             ;;
         *)
             echo "[!] Unknown option: $1" >&2
@@ -272,6 +280,11 @@ if [ "$MODE" != "collect" ]; then
     exit 1
 fi
 
+if ! command -v zip >/dev/null 2>&1; then
+    echo "[!] zip command not found; install zip to create the archive." >&2
+    exit 1
+fi
+
 if [ -d "/vmfs/volumes/datastore1" ]; then
     BASEDIR="/vmfs/volumes/datastore1"
 elif [ -d "/tmp" ]; then
@@ -341,7 +354,11 @@ md5sum * > hashes.md5
 cd /
 
 # Archive and Clean Up
-tar czf "${OUTDIR}.tar.gz" -C "$BASEDIR" "$(basename "$OUTDIR")"
+if [ -n "$ZIP_PASSWORD" ]; then
+    (cd "$BASEDIR" && zip -r -P "$ZIP_PASSWORD" "$(basename "$OUTDIR").zip" "$(basename "$OUTDIR")" >/dev/null)
+    echo "[+] Triage collection complete with password-protected archive: ${OUTDIR}.zip"
+else
+    (cd "$BASEDIR" && zip -r "$(basename "$OUTDIR").zip" "$(basename "$OUTDIR")" >/dev/null)
+    echo "[+] Triage collection complete: ${OUTDIR}.zip"
+fi
 rm -rf "$OUTDIR"
-
-echo "[+] Triage collection complete: ${OUTDIR}.tar.gz"

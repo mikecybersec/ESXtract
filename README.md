@@ -11,7 +11,8 @@ Note there are 2 modes!
 2. SSH into the ESXi host or open the ESXi Shell and navigate to the script location (for example, `/vmfs/volumes/datastore1/`).
 3. Make the script executable: `chmod +x ./esxtract.sh`
 4. Collect forensic artifacts on the ESXi host: `./esxtract.sh -c`
-   - The resulting archive (`esxi_triage_<hostname>_<date>.tar.gz`) is written to `/vmfs/volumes/datastore1` when available, or `/tmp` otherwise. Download it from the host for further analysis.
+   - Create a password-protected zip with `./esxtract.sh -c -p <password>` (requires `zip` on the host).
+   - The resulting archive (`esxi_triage_<hostname>_<date>.zip`) is written to `/vmfs/volumes/datastore1` when available, or `/tmp` otherwise. Download it from the host for further analysis.
 5. Scan a previously collected (unzipped) folder for quick indicators of attack: `./esxtract.sh -s /path/to/esxi_triage_<hostname>_<date>`
    - Use custom detection pipelines during scanning with `./esxtract.sh -s /path/to/esxi_triage_<hostname>_<date> -d /path/to/detections.sh`.
    - When a detections file is provided, each non-comment line is executed from within the scan directory; if no file is specified, the bundled `detections.sh` runs by default.
@@ -43,5 +44,4 @@ grep -R -H -E "unexpected user" . | awk '{ print $0 "   <-- Suspicious account c
 - Add cleanup option
 - Add option to push to S3 bucket
 - Add feature to check for presence of known vulnerabilities/misconfigurations that help common ESXi incidents to manifest or worsen.
-- Add option for password
 - Add option for verbose or quiet mode
