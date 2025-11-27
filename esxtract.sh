@@ -191,9 +191,20 @@ scan_users() {
     report_section "Non-default users"
     baseline="root dcui daemon nobody vpxuser"
     found=0
-    for user in $(awk 'NR>1 && $1 !~ /^-+$/ {print $1}' "$file" | sort -u); do
-        [ -z "$user" ] && continue
-        printf '%s\n' "$baseline" | grep -F -qw -- "$user" && continue
+    for user in $(awk 'NR>1 {gsub(/^[ \t]+/, "", $1); if ($1 != "" && $1 !~ /^-+$/) print $1}' "$file" | sort -u); do
+        case "$user" in
+            "")
+                continue
+                ;;
+            root|dcui|daemon|nobody|vpxuser)
+                continue
+                ;;
+            -* )
+                # Skip separator lines or malformed entries that start with dashes
+                continue
+                ;;
+        esac
+
         found=1
         log_line "  Unexpected user: $user"
     done
