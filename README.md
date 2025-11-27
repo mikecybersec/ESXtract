@@ -11,22 +11,19 @@ Note there are 2 modes!
 - `-c`, `--collection`: Run the artifact collection workflow on an ESXi host.
 - `-s <dir>`, `--scan <dir>`: Scan an extracted collection folder for suspicious indicators.
 - `-d <file>`, `--detections <file>`: Use a custom detections file during scanning (defaults to the bundled `detections.sh`).
-- `-p <password>`, `--password <password>`: Password-protect the resulting zip archive during collection.
-
 ### Collector Mode - To be ran on ESXi via shell
 
 Example:
 
 ```bash
-./esxtract.sh -c [-p <password>]
+./esxtract.sh -c
 ```
 
 1. Upload `esxtract.sh` to a VMware ESXi datastore (for example, using vSphere Client or Datastore Browser).
 2. SSH into the ESXi host or open the ESXi Shell and navigate to the script location (for example, `/vmfs/volumes/datastore1/`).
 3. Make the script executable: `chmod +x ./esxtract.sh`
 4. Collect forensic artifacts on the ESXi host: `./esxtract.sh -c`
-   - Create a password-protected zip with `./esxtract.sh -c -p <password>` (requires `zip` on the host).
-   - The resulting archive (`esxi_triage_<hostname>_<date>.zip`) is written to `/vmfs/volumes/datastore1` when available, or `/tmp` otherwise. Download it from the host for further analysis.
+   - The resulting archive (`esxi_triage_<hostname>_<date>.tar.gz`) is written to `/vmfs/volumes/datastore1` when available, or `/tmp` otherwise. Download it from the host for further analysis.
 5. Scan a previously collected (unzipped) folder for quick indicators of attack: `./esxtract.sh -s /path/to/esxi_triage_<hostname>_<date>`
    - Use custom detection pipelines during scanning with `./esxtract.sh -s /path/to/esxi_triage_<hostname>_<date> -d /path/to/detections.sh`.
    - When a detections file is provided, each non-comment line is executed from within the scan directory; if no file is specified, the bundled `detections.sh` runs by default.
