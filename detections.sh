@@ -71,12 +71,19 @@ grep -R -H --exclude=detections.sh -E "NTPClock" . \
   | grep -E "system clock stepped" \
   | awk '{ print $0 "   <-- ESXi System Clock Manipulation" }'
 
-grep -R -H --exclude=detections.sh -E "system" . \
-  | grep -E "esxcli" \
-  | grep -E "get|list" \
-  | grep -E "user=" \
-  | grep -Ev "filesystem" \
-  | awk '{ print $0 "   <-- ESXi System Information Discovery" }'
+grep -R -H --exclude=detections.sh -E "Hostd\[[0-9]+\].*Dispatch.*system\.[A-Za-z0-9_]+\.(get|list)( done)?" .   | grep -E "opID=esxcli"   | grep -E "user=[A-Za-z0-9_-]+"   | grep -Ev "filesystem"   | awk '
+    {
+        pos = index($0, ":")
+        file = substr($0, 1, pos-1)
+        gsub("^\\./", "", file)
+        count[file]++
+    }
+    END {
+        for (f in count) {
+            printf("[+] %d findings in %s - ESXi System Information Discovery\n", count[f], f)
+        }
+    }
+'
 
 grep -R -H --exclude=detections.sh -E "esxcli system permission set" . \
   | grep -E "role Admin" \
@@ -92,7 +99,13 @@ grep -R -H --exclude=detections.sh -E "esxcli vm process" . \
 
 grep -R -H --exclude=detections.sh -E "File download from path" . \
   | grep -E "was initiated from" \
-  | awk '{ print $0 "   <-- ESXi VM Exported via Remote Tool" }'
+  | grep -Ev "\.vmdk([ '\"]|$)" \
+  | awk '{ print $0 "   <-- File Exported via Remote Tool" }'
 
+
+grep -R -H --exclude=detections.sh -E "File download from path" . \
+  | grep -E "was initiated from" \
+  | grep -Ei "\.vmdk'" \
+  | awk '{ print $0 "   <-- ESXi VM Exported via Remote Tool" }'
 
 
