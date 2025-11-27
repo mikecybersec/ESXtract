@@ -262,7 +262,7 @@ grep -R -H --exclude=detections.sh -E "Hostd\[[0-9]+\].*Dispatch.*system\.[A-Za-
     {
         pos = index($0, ":")
         file = substr($0, 1, pos-1)
-        gsub("^\./", "", file)
+        gsub(/^\.\//, "", file)
         count[file]++
     }
     END {
