@@ -199,16 +199,6 @@ scan_users() {
     [ "$found" -eq 0 ] && log_line "  None detected"
 }
 
-run_detection_pipeline() {
-    pipeline="$1"
-    output=$(sh -c "$pipeline")
-    if [ -n "$output" ]; then
-        log_line "$output"
-        return 0
-    fi
-    return 1
-}
-
 run_detections() {
     target_dir="$1"
     report_section "Detections"
@@ -221,14 +211,55 @@ run_detections() {
         log_error "[!] No detections file provided or found."
     elif [ -f "$detections_path" ]; then
         log_line "  Using detections file: $detections_path"
-        while IFS= read -r pipeline || [ -n "$pipeline" ]; do
-            case "$pipeline" in
-                ''|'#'*)
-                    continue
+
+        run_block() {
+            block="$1"
+            [ -z "$block" ] && return
+
+            tmpfile=$(mktemp)
+            printf '%s\n' "$block" > "$tmpfile"
+            if output=$(cd "$target_dir" && sh "$tmpfile" 2>&1); then
+                if [ -n "$output" ]; then
+                    log_line "$output"
+                    hits=1
+                fi
+            else
+                log_error "$output"
+            fi
+            rm -f "$tmpfile"
+        }
+
+        current_block=""
+        flush_block() {
+            if [ -n "$current_block" ]; then
+                run_block "$current_block"
+                current_block=""
+            fi
+        }
+
+        while IFS= read -r line || [ -n "$line" ]; do
+            trimmed_leading="${line#${line%%[![:space:]]*}}"
+
+            # Empty or whitespace-only lines break blocks
+            if [ -z "$trimmed_leading" ]; then
+                flush_block
+                continue
+            fi
+
+            # Skip standalone comments before a block starts
+            case "$trimmed_leading" in
+                '#'* )
+                    [ -z "$current_block" ] && continue
                     ;;
             esac
-            run_detection_pipeline "cd \"$target_dir\" && $pipeline" && hits=1
+
+            if [ -n "$current_block" ]; then
+                current_block=$(printf '%s\n%s' "$current_block" "$line")
+            else
+                current_block="$line"
+            fi
         done < "$detections_path"
+        flush_block
     else
         log_error "[!] Detections file not found: $detections_path"
     fi

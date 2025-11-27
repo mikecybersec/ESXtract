@@ -107,7 +107,7 @@ grep -R -H --binary-files=without-match --exclude=detections.sh -E "root" . \
             printf("[+] %d findings in %s - ESXi External Root Login Activity\n", count[f], f)
         }
     }
-
+'
 
 grep -R -H --exclude=detections.sh -E "network firewall set" . \
   | grep -E "enabled f" \
