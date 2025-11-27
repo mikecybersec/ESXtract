@@ -1,4 +1,4 @@
-grep -R -H --exclude=detections.sh -E "esxcli system account" . \
+grep -R -H --binary-files=text --exclude=detections.sh -E "esxcli system account" . \
   | grep -E "\-i |--id" \
   | grep -Ev "shell" \
   | awk -F: '
@@ -14,7 +14,7 @@ grep -R -H --exclude=detections.sh -E "esxcli system account" . \
     }
 '
 
-grep -R -H --exclude=detections.sh -E "esxcli system auditrecords" . \
+grep -R -H --binary-files=text --exclude=detections.sh -E "esxcli system auditrecords" . \
   | grep -E "remote|local" \
   | grep -Ev "shell" \
   | awk -F: '
@@ -30,7 +30,7 @@ grep -R -H --exclude=detections.sh -E "esxcli system auditrecords" . \
     }
 '
 
-grep -R -H --exclude=detections.sh -E "pkill -9 vmx-" . \
+grep -R -H --binary-files=text --exclude=detections.sh -E "pkill -9 vmx-" . \
   | awk -F: '
     {
         file = $1
@@ -62,7 +62,7 @@ grep -R -H -a --exclude=detections.sh -E "esxcli" . \
     }
 '
 
-grep -R -H --exclude=detections.sh -E "Download failed|Failed to download file|File download error|Could not download" . \
+grep -R -H --binary-files=text --exclude=detections.sh -E "Download failed|Failed to download file|File download error|Could not download" . \
   | awk -F: '
     {
         file = $1
@@ -76,7 +76,7 @@ grep -R -H --exclude=detections.sh -E "Download failed|Failed to download file|F
     }
 '
 
-grep -R -H --exclude=detections.sh -E "system settings encryption set" . \
+grep -R -H --binary-files=text --exclude=detections.sh -E "system settings encryption set" . \
   | grep -Ev "shell" \
   | grep -E " -s | -e |--require-secure-boot|require-exec-installed-only|execInstalledOnly" \
   | awk -F: '
@@ -109,7 +109,7 @@ grep -R -H --binary-files=without-match --exclude=detections.sh -E "root" . \
     }
 '
 
-grep -R -H --exclude=detections.sh -E "network firewall set" . \
+grep -R -H --binary-files=text --exclude=detections.sh -E "network firewall set" . \
   | grep -E "enabled f" \
   | awk -F: '
     {
@@ -124,7 +124,7 @@ grep -R -H --exclude=detections.sh -E "network firewall set" . \
     }
 '
 
-grep -R -H --exclude=detections.sh -E "lockdownmode\.disabled|Administrator access to the host has been enabled" . \
+grep -R -H --binary-files=text --exclude=detections.sh -E "lockdownmode\.disabled|Administrator access to the host has been enabled" . \
   | awk -F: '
     {
         file = $1
@@ -138,7 +138,7 @@ grep -R -H --exclude=detections.sh -E "lockdownmode\.disabled|Administrator acce
     }
 '
 
-grep -R -H --exclude=detections.sh -E "Set called with key" . \
+grep -R -H --binary-files=text --exclude=detections.sh -E "Set called with key" . \
   | grep -E "Syslog\.global\.logHost|Syslog\.global\.logdir" \
   | awk -F: '
     {
@@ -153,7 +153,7 @@ grep -R -H --exclude=detections.sh -E "Set called with key" . \
     }
 '
 
-grep -R -H --exclude=detections.sh -E "image profile with validation disabled\.|image profile bypassing signing and acceptance level verification\.|vib without valid signature," . \
+grep -R -H --binary-files=text --exclude=detections.sh -E "image profile with validation disabled\.|image profile bypassing signing and acceptance level verification\.|vib without valid signature," . \
   | awk -F: '
     {
         file = $1
@@ -167,7 +167,7 @@ grep -R -H --exclude=detections.sh -E "image profile with validation disabled\.|
     }
 '
 
-grep -R -H --exclude=detections.sh -E "bash -i >&|/dev/tcp/|/dev/udp/|socat exec:|socket\(S,PF_INET" . \
+grep -R -H --binary-files=text --exclude=detections.sh -E "bash -i >&|/dev/tcp/|/dev/udp/|socat exec:|socket\(S,PF_INET" . \
   | awk -F: '
     {
         file = $1
@@ -181,7 +181,7 @@ grep -R -H --exclude=detections.sh -E "bash -i >&|/dev/tcp/|/dev/udp/|socat exec
     }
 '
 
-grep -R -H --exclude=detections.sh -E "shell\[" . \
+grep -R -H --binary-files=text --exclude=detections.sh -E "shell\[" . \
   | grep -E "/etc/shadow|/etc/vmware/hostd/hostd\.xml|/etc/vmware/vpxa/vpxa\.cfg|/etc/sfcb/sfcb\.cfg|/etc/security/|/etc/likewise/krb5-affinity\.conf|/etc/vmware-vpx/vcdb\.properties" \
   | awk -F: '
     {
@@ -196,7 +196,7 @@ grep -R -H --exclude=detections.sh -E "shell\[" . \
     }
 '
 
-grep -R -H --exclude=detections.sh -E "root" . \
+grep -R -H --binary-files=text --exclude=detections.sh -E "root" . \
   | grep -E "logged in" \
   | grep -E "root@[0-9]{1,3}(\.[0-9]{1,3}){3}" \
   | grep -Ev "root@127\.0\.0\.1" \
@@ -213,7 +213,7 @@ grep -R -H --exclude=detections.sh -E "root" . \
     }
 '
 
-grep -R -H --exclude=detections.sh -E "ESXi Shell" . \
+grep -R -H --binary-files=text --exclude=detections.sh -E "ESXi Shell" . \
   | grep -E "has been enabled" \
   | awk -F: '
     {
@@ -228,7 +228,7 @@ grep -R -H --exclude=detections.sh -E "ESXi Shell" . \
     }
 '
 
-grep -R -H --exclude=detections.sh -E "syslog config set" . \
+grep -R -H --binary-files=text --exclude=detections.sh -E "syslog config set" . \
   | grep -E "esxcli" \
   | awk -F: '
     {
@@ -243,7 +243,7 @@ grep -R -H --exclude=detections.sh -E "syslog config set" . \
     }
 '
 
-grep -R -H --exclude=detections.sh -E "NTPClock" . \
+grep -R -H --binary-files=text --exclude=detections.sh -E "NTPClock" . \
   | grep -E "system clock stepped" \
   | awk -F: '
     {
@@ -258,7 +258,7 @@ grep -R -H --exclude=detections.sh -E "NTPClock" . \
     }
 '
 
-grep -R -H --exclude=detections.sh -E "Hostd\[[0-9]+\].*Dispatch.*system\.[A-Za-z0-9_]+\.(get|list)( done)?" .   | grep -E "opID=esxcli"   | grep -E "user=[A-Za-z0-9_-]+"   | grep -Ev "filesystem"   | awk '
+grep -R -H --binary-files=text --exclude=detections.sh -E "Hostd\[[0-9]+\].*Dispatch.*system\.[A-Za-z0-9_]+\.(get|list)( done)?" .   | grep -E "opID=esxcli"   | grep -E "user=[A-Za-z0-9_-]+"   | grep -Ev "filesystem"   | awk '
     {
         pos = index($0, ":")
         file = substr($0, 1, pos-1)
@@ -272,7 +272,7 @@ grep -R -H --exclude=detections.sh -E "Hostd\[[0-9]+\].*Dispatch.*system\.[A-Za-
     }
 '
 
-grep -R -H --exclude=detections.sh -E "esxcli system permission set" . \
+grep -R -H --binary-files=text --exclude=detections.sh -E "esxcli system permission set" . \
   | grep -E "role Admin" \
   | awk -F: '
     {
@@ -287,7 +287,7 @@ grep -R -H --exclude=detections.sh -E "esxcli system permission set" . \
     }
 '
 
-grep -R -H --exclude=detections.sh -E "esxcli software acceptance set" . \
+grep -R -H --binary-files=text --exclude=detections.sh -E "esxcli software acceptance set" . \
   | grep -E "shell" \
   | awk -F: '
     {
@@ -302,7 +302,7 @@ grep -R -H --exclude=detections.sh -E "esxcli software acceptance set" . \
     }
 '
 
-grep -R -H --exclude=detections.sh -E "esxcli vm process" . \
+grep -R -H --binary-files=text --exclude=detections.sh -E "esxcli vm process" . \
   | grep -E "list" \
   | awk -F: '
     {
@@ -317,7 +317,7 @@ grep -R -H --exclude=detections.sh -E "esxcli vm process" . \
     }
 '
 
-grep -R -H --exclude=detections.sh -E "File download from path" . \
+grep -R -H --binary-files=text --exclude=detections.sh -E "File download from path" . \
   | grep -E "was initiated from" \
   | grep -Ev "\.vmdk([ '\"]|$)" \
   | awk -F: '
@@ -333,7 +333,7 @@ grep -R -H --exclude=detections.sh -E "File download from path" . \
     }
 '
 
-grep -R -H --exclude=detections.sh -E "File download from path" . \
+grep -R -H --binary-files=text --exclude=detections.sh -E "File download from path" . \
   | grep -E "was initiated from" \
   | grep -Ei "\.vmdk'" \
   | awk -F: '
