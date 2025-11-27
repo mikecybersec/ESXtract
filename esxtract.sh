@@ -191,8 +191,9 @@ scan_users() {
     report_section "Non-default users"
     baseline="root dcui daemon nobody vpxuser"
     found=0
-    for user in $(awk 'NR>1 {print $1}' "$file" | sort -u); do
-        echo "$baseline" | grep -qw "$user" && continue
+    for user in $(awk 'NR>1 && $1 !~ /^-+$/ {print $1}' "$file" | sort -u); do
+        [ -z "$user" ] && continue
+        printf '%s\n' "$baseline" | grep -F -qw -- "$user" && continue
         found=1
         log_line "  Unexpected user: $user"
     done
