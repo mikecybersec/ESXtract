@@ -61,7 +61,7 @@ grep -R -H -E "unexpected user" . | awk '{ print $0 "   <-- Suspicious account c
 
 ## Planned Changes
 - Offer a compiled version
-- Add cleanup option
+- Add atomic tests for scanning function
 - Add option to push to S3 bucket
 - Add feature to check for presence of known vulnerabilities/misconfigurations that help common ESXi incidents to manifest or worsen.
 - Add option for verbose or quiet mode
