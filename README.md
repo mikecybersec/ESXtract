@@ -42,7 +42,6 @@ grep -R -H -E "unexpected user" . | awk '{ print $0 "   <-- Suspicious account c
 - Offer a compiled version
 - Add cleanup option
 - Add option to push to S3 bucket
-- Add a 'chainsaw' function to identify Indicators of Attack (IoA)
 - Add feature to check for presence of known vulnerabilities/misconfigurations that help common ESXi incidents to manifest or worsen.
 - Add option for password
 - Add option for verbose or quiet mode
