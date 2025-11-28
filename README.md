@@ -1,6 +1,8 @@
 # ESXtract
 ESXtract is a project focused on improving the forensics collection process from ESXi hosts.</br>
-The guide related to this utility is here; https://mikecybersec.notion.site/ESXi-IR-Guide-0ffbcec7272244d6b10dba4f4d16a7c8?pvs=7
+The IR guide related to this utility is here: https://mikecybersec.notion.site/ESXi-IR-Guide-0ffbcec7272244d6b10dba4f4d16a7c8?pvs=7 </br></br>
+<a href="https://www.buymeacoffee.com/mikecybersec" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: 41px !important;width: 174px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;" ></a>
+
 
 ## Usage
 Note there are 2 modes!
