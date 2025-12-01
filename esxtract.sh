@@ -291,7 +291,7 @@ run_scan() {
         exit 1
     fi
 
-    SCAN_FINDINGS_FILE="$target_dir/scan_findings.txt"
+    SCAN_FINDINGS_FILE="$target_dir/indicators_of_compromise.txt"
     : > "$SCAN_FINDINGS_FILE"
 
     log_line "[+] Starting scan of $target_dir"
